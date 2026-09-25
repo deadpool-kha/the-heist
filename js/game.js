@@ -990,11 +990,12 @@ function analyzeCase() {
 
             <div class="case-kicker">INVESTIGATION ANALYSIS</div>
 
-            <h1>WHAT DOESN'T ADD UP?</h1>
+            <h1>INVESTIGATION FINDINGS</h1>
 
             <p class="phase-instruction">
-                The system compared player testimony against
-                the known facts of the case.
+                Player testimony has been compared against
+                the known facts of the case. Review each finding
+                before making an accusation.
             </p>
 
             ${
@@ -1011,52 +1012,72 @@ function analyzeCase() {
                     `
                     : `
                         <div class="analysis-summary">
-                            <span>FINDINGS</span>
+                            <span>ITEMS REQUIRING ATTENTION</span>
                             <strong>${findings.length}</strong>
                         </div>
 
                         <div class="analysis-list">
 
-                            ${findings.map((finding, index) => `
-                                <article class="analysis-card">
+                          ${findings.map((finding, index) => {
 
-                                    <div class="analysis-number">
-                                        0${index + 1}
+                        const player = players.find(
+                            player => player.name === finding.player
+                        );
+
+                        return `
+                            <article class="analysis-card">
+
+                                <div class="analysis-number">
+                                    ${String(index + 1).padStart(2, "0")}
+                                </div>
+
+                                <div class="analysis-content">
+
+                                    <div class="analysis-player-label">
+                                        PLAYER ${
+                                            player
+                                                ? String(player.id).padStart(2, "0")
+                                                : "?"
+                                        }
                                     </div>
 
-                                    <div class="analysis-content">
+                                    <div class="analysis-player-name">
+                                        ${finding.player}
+                                    </div>
 
-                                        <div class="analysis-topline">
-                                            <span class="analysis-player">
-                                                ${finding.player}
-                                            </span>
-
-                                            <span class="
-                                                analysis-severity
-                                                ${finding.severity.toLowerCase()}
-                                            ">
-                                                ${finding.severity}
-                                            </span>
-                                        </div>
+                                    <div class="analysis-topline">
 
                                         <h2>
                                             ${finding.fact.category}
                                             CONTRADICTION
                                         </h2>
 
-                                        <p>
-                                            ${finding.reason}
-                                        </p>
-
-                                        <div class="analysis-fact">
-                                            <span>KNOWN FACT</span>
-                                            ${finding.fact.description}
-                                        </div>
+                                        <span class="
+                                            analysis-severity
+                                            ${finding.severity.toLowerCase()}
+                                        ">
+                                            ${finding.severity}
+                                        </span>
 
                                     </div>
 
-                                </article>
-                            `).join("")}
+                                    <p class="analysis-reason">
+                                        ${finding.reason}
+                                    </p>
+
+                                    <div class="analysis-fact">
+
+                                        <span>KNOWN FACT</span>
+
+                                        ${finding.fact.description}
+
+                                    </div>
+
+                                </div>
+
+                            </article>
+                        `;
+                    }).join("")}
 
                         </div>
                     `
