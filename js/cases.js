@@ -57,9 +57,60 @@ const cases = [
                 clue:
                     "Someone manually interrupted the alarm."
             }
+        ],
+
+        /*
+         * Structured facts allow the game to detect
+         * contradictions without requiring AI.
+         */
+        investigationFacts: [
+            {
+                id: "east-entrance",
+                category: "LOCATION",
+                time: "11:42 PM",
+                description:
+                    "Someone accessed the east entrance at 11:42 PM.",
+                keywords: [
+                    "east entrance",
+                    "east door",
+                    "entrance",
+                    "east"
+                ]
+            },
+            {
+                id: "alarm-interruption",
+                category: "ALARM",
+                time: "11:47 PM",
+                description:
+                    "The alarm was manually interrupted 13 seconds after activation.",
+                keywords: [
+                    "alarm",
+                    "13 seconds",
+                    "interrupted",
+                    "disabled",
+                    "stopped"
+                ]
+            },
+            {
+                id: "display-condition",
+                category: "DISPLAY",
+                time: "11:46 PM",
+                description:
+                    "The display case was still intact at 11:46 PM.",
+                keywords: [
+                    "display",
+                    "case",
+                    "glass",
+                    "intact"
+                ]
+            }
         ]
     }
 ];
+
+function getRandomCase() {
+    return cases[Math.floor(Math.random() * cases.length)];
+}
 
 function getRandomCase() {
     return cases[Math.floor(Math.random() * cases.length)];

@@ -865,6 +865,258 @@ function showTestimonySummary() {
         .addEventListener("click", showInvestigationBoard);
 }
 
+/* =========================================================
+   CONTRADICTION ENGINE
+========================================================= */
+
+function normalizeTestimony(text) {
+    return text
+        .toLowerCase()
+        .replace(/[.,!?;:"']/g, "")
+        .replace(/\s+/g, " ")
+        .trim();
+}
+
+function testimonyContainsAny(text, keywords) {
+    return keywords.some(keyword => text.includes(keyword));
+}
+
+function analyzePlayerTestimony(player) {
+    if (!player.testimony || !currentCase.investigationFacts) {
+        return [];
+    }
+
+    const testimony = normalizeTestimony(player.testimony);
+    const findings = [];
+
+    currentCase.investigationFacts.forEach(fact => {
+
+        const mentionsFact = testimonyContainsAny(
+            testimony,
+            fact.keywords
+        );
+
+        if (!mentionsFact) {
+            return;
+        }
+
+        /*
+         * The game currently identifies statements
+         * that directly conflict with known facts.
+         */
+
+        if (
+            fact.id === "east-entrance" &&
+            (
+                testimony.includes("never") ||
+                testimony.includes("wasnt") ||
+                testimony.includes("wasn't") ||
+                testimony.includes("did not") ||
+                testimony.includes("didn't") ||
+                testimony.includes("not near")
+            )
+        ) {
+            findings.push({
+                player: player.name,
+                severity: "HIGH",
+                fact: fact,
+                reason:
+                    "The testimony appears to deny being near the east entrance, while the case records activity there at 11:42 PM."
+            });
+        }
+
+        if (
+            fact.id === "alarm-interruption" &&
+            (
+                testimony.includes("automatic") ||
+                testimony.includes("system failure") ||
+                testimony.includes("failed on its own") ||
+                testimony.includes("malfunction")
+            )
+        ) {
+            findings.push({
+                player: player.name,
+                severity: "MEDIUM",
+                fact: fact,
+                reason:
+                    "The testimony describes the alarm as an automatic failure, while the evidence indicates that it was manually interrupted."
+            });
+        }
+
+        if (
+            fact.id === "display-condition" &&
+            (
+                testimony.includes("broken before") ||
+                testimony.includes("already broken") ||
+                testimony.includes("was broken at 11:40") ||
+                testimony.includes("was already damaged")
+            )
+        ) {
+            findings.push({
+                player: player.name,
+                severity: "MEDIUM",
+                fact: fact,
+                reason:
+                    "The testimony places the display damage earlier than the known timeline."
+            });
+        }
+    });
+
+    return findings;
+}
+
+function analyzeAllTestimonies() {
+    const findings = [];
+
+    players.forEach(player => {
+        const playerFindings = analyzePlayerTestimony(player);
+
+        playerFindings.forEach(finding => {
+            findings.push(finding);
+        });
+    });
+
+    return findings;
+}
+
+
+function analyzeCase() {
+    const findings = analyzeAllTestimonies();
+
+    const gameContent = document.getElementById("game-content");
+
+    gameContent.innerHTML = `
+        <section class="analysis-section">
+
+            <div class="case-kicker">INVESTIGATION ANALYSIS</div>
+
+            <h1>WHAT DOESN'T ADD UP?</h1>
+
+            <p class="phase-instruction">
+                The system compared player testimony against
+                the known facts of the case.
+            </p>
+
+            ${
+                findings.length === 0
+                    ? `
+                        <div class="analysis-empty">
+                            <div class="analysis-icon">✓</div>
+                            <h2>NO DIRECT CONTRADICTIONS</h2>
+                            <p>
+                                No testimony directly conflicts with
+                                the currently known evidence.
+                            </p>
+                        </div>
+                    `
+                    : `
+                        <div class="analysis-summary">
+                            <span>FINDINGS</span>
+                            <strong>${findings.length}</strong>
+                        </div>
+
+                        <div class="analysis-list">
+
+                            ${findings.map((finding, index) => `
+                                <article class="analysis-card">
+
+                                    <div class="analysis-number">
+                                        0${index + 1}
+                                    </div>
+
+                                    <div class="analysis-content">
+
+                                        <div class="analysis-topline">
+                                            <span class="analysis-player">
+                                                ${finding.player}
+                                            </span>
+
+                                            <span class="
+                                                analysis-severity
+                                                ${finding.severity.toLowerCase()}
+                                            ">
+                                                ${finding.severity}
+                                            </span>
+                                        </div>
+
+                                        <h2>
+                                            ${finding.fact.category}
+                                            CONTRADICTION
+                                        </h2>
+
+                                        <p>
+                                            ${finding.reason}
+                                        </p>
+
+                                        <div class="analysis-fact">
+                                            <span>KNOWN FACT</span>
+                                            ${finding.fact.description}
+                                        </div>
+
+                                    </div>
+
+                                </article>
+                            `).join("")}
+
+                        </div>
+                    `
+            }
+
+            <div class="analysis-footer">
+
+                <div>
+                    <span>IMPORTANT</span>
+                    <p>
+                        A contradiction is a lead, not proof of guilt.
+                    </p>
+                </div>
+
+                <button
+                    id="continue-analysis-btn"
+                    class="primary-button"
+                >
+                    CONTINUE
+                </button>
+
+            </div>
+
+        </section>
+    `;
+
+    document
+        .getElementById("continue-analysis-btn")
+        .addEventListener("click", showAccusationPlaceholder);
+}
+function showAccusationPlaceholder() {
+    const gameContent = document.getElementById("game-content");
+
+    gameContent.innerHTML = `
+        <section class="investigation-section">
+
+            <div class="case-kicker">NEXT PHASE</div>
+
+            <h1>THE ACCUSATION</h1>
+
+            <p class="phase-instruction">
+                The investigators are ready to identify
+                who they believe stole the diamond.
+            </p>
+
+            <div class="speak-card">
+                <div class="speak-icon">🔎</div>
+
+                <h2>Accusation system coming next.</h2>
+
+                <p>
+                    Each player will privately select a suspect,
+                    then the votes will be revealed.
+                </p>
+            </div>
+
+        </section>
+    `;
+}
+
 function showInvestigationBoard() {
     currentPhase = "review";
 
