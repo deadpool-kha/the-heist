@@ -1,5 +1,6 @@
 let currentCase = null;
 let currentPhase = "setup";
+let accusationVotes = [];
 
 /* =========================================================
    THE HEIST
@@ -1106,36 +1107,407 @@ function analyzeCase() {
 
     document
         .getElementById("continue-analysis-btn")
-        .addEventListener("click", showAccusationPlaceholder);
+        .addEventListener("click", showAccusationPhase);
 }
-function showAccusationPlaceholder() {
+function showAccusationPhase() {
+    currentPhase = "accusation";
+    currentPlayerIndex = 0;
+    accusationVotes = [];
+
+    showPrivateAccusation();
+}
+
+function showPrivateAccusation() {
+    const player = getCurrentPlayer();
+
+    const suspects = players.filter(
+        suspect => suspect.id !== player.id
+    );
+
     const gameContent = document.getElementById("game-content");
 
     gameContent.innerHTML = `
-        <section class="investigation-section">
+        <section class="accusation-section">
 
-            <div class="case-kicker">NEXT PHASE</div>
+            <div class="accusation-classified">
+                PRIVATE ACCUSATION
+            </div>
 
-            <h1>THE ACCUSATION</h1>
+            <div class="accusation-player">
 
-            <p class="phase-instruction">
-                The investigators are ready to identify
-                who they believe stole the diamond.
-            </p>
+                <div class="accusation-avatar">
+                    ${player.character ? player.character.emoji : "?"}
+                </div>
 
-            <div class="speak-card">
-                <div class="speak-icon">🔎</div>
+                <div>
+                    <div class="case-kicker">
+                        PLAYER ${String(player.id).padStart(2, "0")}
+                    </div>
 
-                <h2>Accusation system coming next.</h2>
+                    <h1>${player.name.toUpperCase()}</h1>
+                </div>
+
+            </div>
+
+            <div class="accusation-instruction">
+
+                <span>FINAL DECISION</span>
+
+                <h2>
+                    WHO STOLE THE DIAMOND?
+                </h2>
 
                 <p>
-                    Each player will privately select a suspect,
-                    then the votes will be revealed.
+                    Choose the player you believe is responsible.
+                    Your vote will remain hidden until everyone
+                    has made their accusation.
                 </p>
+
             </div>
+
+            <div class="suspect-grid">
+
+                ${suspects.map(suspect => `
+                    <button
+                        class="suspect-card"
+                        data-player-id="${suspect.id}"
+                    >
+
+                        <div class="suspect-avatar">
+                            ${
+                                suspect.character
+                                    ? suspect.character.emoji
+                                    : "?"
+                            }
+                        </div>
+
+                        <div class="suspect-info">
+
+                            <span>
+                                PLAYER ${String(suspect.id).padStart(2, "0")}
+                            </span>
+
+                            <strong>
+                                ${suspect.name}
+                            </strong>
+
+                        </div>
+
+                        <div class="suspect-check">
+                            ✓
+                        </div>
+
+                    </button>
+                `).join("")}
+
+            </div>
+
+            <div class="accusation-warning">
+                🔒 Your accusation is private.
+                Do not reveal your choice to the other players.
+            </div>
+
+            <button
+                id="submit-accusation-btn"
+                class="primary-button"
+                disabled
+            >
+                CONFIRM ACCUSATION
+            </button>
 
         </section>
     `;
+
+    let selectedSuspectId = null;
+
+    const suspectCards =
+        document.querySelectorAll(".suspect-card");
+
+    const submitButton =
+        document.getElementById("submit-accusation-btn");
+
+    suspectCards.forEach(card => {
+
+        card.addEventListener("click", () => {
+
+            suspectCards.forEach(item => {
+                item.classList.remove("selected");
+            });
+
+            card.classList.add("selected");
+
+            selectedSuspectId =
+                Number(card.dataset.playerId);
+
+            submitButton.disabled = false;
+        });
+
+    });
+
+    submitButton.addEventListener("click", () => {
+
+        if (!selectedSuspectId) return;
+
+        accusationVotes.push({
+            voterId: player.id,
+            suspectId: selectedSuspectId
+        });
+
+        finishPrivateAccusation();
+    });
+}
+
+function finishPrivateAccusation() {
+
+    if (currentPlayerIndex < players.length - 1) {
+
+        currentPlayerIndex++;
+
+        showAccusationPassScreen();
+
+        return;
+    }
+
+    currentPlayerIndex = 0;
+
+    showVoteReveal();
+}
+
+function showAccusationPassScreen() {
+
+    const gameContent =
+        document.getElementById("game-content");
+
+    const nextPlayer = getCurrentPlayer();
+
+    gameContent.innerHTML = `
+        <section class="pass-screen">
+
+            <div class="pass-icon">
+                🔒
+            </div>
+
+            <div class="case-kicker">
+                ACCUSATION RECORDED
+            </div>
+
+            <h1>
+                PASS THE DEVICE
+            </h1>
+
+            <p>
+                The previous accusation has been locked.
+                Do not reveal the vote.
+            </p>
+
+            <div class="next-player-card">
+
+                <span>
+                    NEXT INVESTIGATOR
+                </span>
+
+                <strong>
+                    ${nextPlayer.name.toUpperCase()}
+                </strong>
+
+            </div>
+
+            <button
+                id="next-accusation-btn"
+                class="primary-button"
+            >
+                I'M READY
+            </button>
+
+        </section>
+    `;
+
+    document
+        .getElementById("next-accusation-btn")
+        .addEventListener("click", showPrivateAccusation);
+}
+
+function showVoteReveal() {
+
+    currentPhase = "vote-reveal";
+
+    const voteCounts = {};
+
+    players.forEach(player => {
+        voteCounts[player.id] = 0;
+    });
+
+    accusationVotes.forEach(vote => {
+        voteCounts[vote.suspectId]++;
+    });
+
+    const highestVotes = Math.max(...Object.values(voteCounts));
+
+    const leaders = players.filter(
+        player => voteCounts[player.id] === highestVotes
+    );
+
+    const hasTie = leaders.length > 1;
+
+    const gameContent =
+        document.getElementById("game-content");
+
+    gameContent.innerHTML = `
+        <section class="vote-reveal-section">
+
+            <div class="case-kicker">
+                ACCUSATIONS REVEALED
+            </div>
+
+            <h1>
+                THE ROOM HAS VOTED
+            </h1>
+
+            <p class="phase-instruction">
+                Every investigator has made their accusation.
+                The votes are now public.
+            </p>
+
+            ${
+                hasTie
+                    ? `
+                        <div class="vote-result tie">
+
+                            <div class="vote-result-icon">
+                                ⚠
+                            </div>
+
+                            <div>
+                                <span>
+                                    NO CONSENSUS
+                                </span>
+
+                                <h2>
+                                    THE VOTE IS TIED
+                                </h2>
+
+                                <p>
+                                    The investigators could not agree
+                                    on a single suspect.
+                                </p>
+                            </div>
+
+                        </div>
+                    `
+                    : `
+                        <div class="vote-result">
+
+                            <div class="vote-result-icon">
+                                🎯
+                            </div>
+
+                            <div>
+                                <span>
+                                    GROUP SUSPECT
+                                </span>
+
+                                <h2>
+                                    ${leaders[0].name.toUpperCase()}
+                                </h2>
+
+                                <p>
+                                    Received ${highestVotes}
+                                    ${highestVotes === 1 ? "vote" : "votes"}.
+                                </p>
+                            </div>
+
+                        </div>
+                    `
+            }
+
+            <div class="vote-list">
+
+                ${players.map(player => {
+
+                    const votes =
+                        voteCounts[player.id] || 0;
+
+                    const isLeader =
+                        voteCounts[player.id] === highestVotes;
+
+                    return `
+                        <article class="
+                            vote-card
+                            ${isLeader ? "vote-leader" : ""}
+                        ">
+
+                            <div class="vote-player">
+
+                                <div class="vote-avatar">
+                                    ${
+                                        player.character
+                                            ? player.character.emoji
+                                            : "?"
+                                    }
+                                </div>
+
+                                <div>
+
+                                    <span>
+                                        PLAYER ${String(player.id).padStart(2, "0")}
+                                    </span>
+
+                                    <strong>
+                                        ${player.name}
+                                    </strong>
+
+                                </div>
+
+                            </div>
+
+                            <div class="vote-count">
+
+                                <strong>
+                                    ${votes}
+                                </strong>
+
+                                <span>
+                                    ${votes === 1 ? "VOTE" : "VOTES"}
+                                </span>
+
+                            </div>
+
+                        </article>
+                    `;
+
+                }).join("")}
+
+            </div>
+
+            <div class="vote-warning">
+
+                <span>
+                    IMPORTANT
+                </span>
+
+                <p>
+                    ${
+                        hasTie
+                            ? "The group reached no consensus. The actual thief will now be revealed."
+                            : "The group selected a suspect. Now find out whether they were right."
+                    }
+                </p>
+
+            </div>
+
+            <button
+                id="reveal-truth-btn"
+                class="primary-button"
+            >
+                REVEAL THE TRUTH
+            </button>
+
+        </section>
+    `;
+
+    document
+        .getElementById("reveal-truth-btn")
+        .addEventListener("click", revealTruth);
 }
 
 function showInvestigationBoard() {
