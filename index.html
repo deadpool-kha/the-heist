@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+
+    <title>THE HEIST</title>
+
+    <!-- Google Font -->
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+
+    <!-- Main stylesheet -->
+    <link rel="stylesheet" href="css/style.css">
+</head>
+
+<body>
+
+    <!-- =====================================================
+         MAIN GAME CONTAINER
+    ====================================================== -->
+
+    <main id="app">
+
+        <!-- ================================================
+             HOME SCREEN
+        ================================================= -->
+
+        <section id="home-screen" class="screen active">
+
+            <!-- Background decoration -->
+            <div class="background-grid"></div>
+            <div class="background-glow glow-one"></div>
+            <div class="background-glow glow-two"></div>
+
+            <!-- Top navigation -->
+            <header class="topbar">
+
+                <div class="brand">
+                    <span class="brand-mark">◆</span>
+                    <span>THE HEIST</span>
+                </div>
+
+                <div class="topbar-status">
+                    <span class="status-dot"></span>
+                    SYSTEM ONLINE
+                </div>
+
+            </header>
+
+
+            <!-- Main hero -->
+            <div class="hero">
+
+                <!-- Case label -->
+                <div class="case-label">
+                    <span class="case-line"></span>
+                    CASE FILE 001
+                    <span class="case-line"></span>
+                </div>
+
+
+                <!-- Main title -->
+                <h1>
+                    THE
+                    <span>HEIST</span>
+                </h1>
+
+
+                <!-- Tagline -->
+                <p class="hero-tagline">
+                    Someone stole it.<br>
+                    Someone knows the truth.<br>
+                    <strong>Someone is lying.</strong>
+                </p>
+
+
+                <!-- Start button -->
+                <button id="start-game-btn" class="primary-button">
+
+                    <span class="button-icon">◈</span>
+
+                    <span>START INVESTIGATION</span>
+
+                    <span class="button-arrow">→</span>
+
+                </button>
+
+
+                <!-- Small game information -->
+                <div class="game-info">
+
+                    <div class="info-item">
+                        <span class="info-number">3–6</span>
+                        <span class="info-label">PLAYERS</span>
+                    </div>
+
+                    <div class="info-divider"></div>
+
+                    <div class="info-item">
+                        <span class="info-number">1</span>
+                        <span class="info-label">THIEF</span>
+                    </div>
+
+                    <div class="info-divider"></div>
+
+                    <div class="info-item">
+                        <span class="info-number">∞</span>
+                        <span class="info-label">CASES</span>
+                    </div>
+
+                </div>
+
+            </div>
+
+
+            <!-- Bottom information -->
+            <footer class="home-footer">
+
+                <div>
+                    <span class="footer-key">HOW TO PLAY</span>
+                    Pass the device. Investigate. Accuse.
+                </div>
+
+                <div class="footer-right">
+                    AI INVESTIGATOR
+                    <span class="ai-indicator">●</span>
+                </div>
+
+            </footer>
+
+        </section>
+
+
+        <!-- ================================================
+             PLAYER SETUP SCREEN
+        ================================================= -->
+
+        <section id="setup-screen" class="screen">
+
+            <header class="game-header">
+
+                <div class="brand">
+                    <span class="brand-mark">◆</span>
+                    THE HEIST
+                </div>
+
+                <div class="case-number">
+                    CASE #001
+                </div>
+
+            </header>
+
+
+            <div class="setup-container">
+
+                <div class="section-heading">
+
+                    <span class="eyebrow">
+                        INVESTIGATION SETUP
+                    </span>
+
+                    <h2>
+                        Assemble your<br>
+                        <span>investigators.</span>
+                    </h2>
+
+                    <p>
+                        Choose 3–6 players. Each investigator will receive
+                        a secret identity and information.
+                    </p>
+
+                </div>
+
+
+                <!-- Player cards will eventually be generated by JS -->
+                <div id="player-list" class="player-list">
+
+                    <div class="player-card">
+
+                        <div class="player-number">
+                            01
+                        </div>
+
+                        <div class="player-avatar-placeholder">
+                            ?
+                        </div>
+
+                        <div class="player-input-wrapper">
+
+                            <label>INVESTIGATOR NAME</label>
+
+                            <input
+                                type="text"
+                                class="player-name-input"
+                                placeholder="Enter name"
+                                maxlength="16"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="player-card">
+
+                        <div class="player-number">
+                            02
+                        </div>
+
+                        <div class="player-avatar-placeholder">
+                            ?
+                        </div>
+
+                        <div class="player-input-wrapper">
+
+                            <label>INVESTIGATOR NAME</label>
+
+                            <input
+                                type="text"
+                                class="player-name-input"
+                                placeholder="Enter name"
+                                maxlength="16"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <div class="player-card">
+
+                        <div class="player-number">
+                            03
+                        </div>
+
+                        <div class="player-avatar-placeholder">
+                            ?
+                        </div>
+
+                        <div class="player-input-wrapper">
+
+                            <label>INVESTIGATOR NAME</label>
+
+                            <input
+                                type="text"
+                                class="player-name-input"
+                                placeholder="Enter name"
+                                maxlength="16"
+                            >
+
+                        </div>
+
+                    </div>
+
+                </div>
+
+
+                <!-- Add player -->
+                <button id="add-player-btn" class="secondary-button">
+                    + ADD INVESTIGATOR
+                </button>
+
+
+                <!-- Continue -->
+                <button id="continue-setup-btn" class="primary-button setup-button">
+
+                    <span>CHOOSE CHARACTERS</span>
+
+                    <span class="button-arrow">→</span>
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================
+             CHARACTER SELECTION SCREEN
+        ================================================= -->
+
+        <section id="character-screen" class="screen">
+
+            <header class="game-header">
+
+                <div class="brand">
+                    <span class="brand-mark">◆</span>
+                    THE HEIST
+                </div>
+
+                <div class="case-number">
+                    CHARACTER SELECTION
+                </div>
+
+            </header>
+
+
+            <div class="character-container">
+
+                <div class="section-heading centered">
+
+                    <span class="eyebrow">
+                        INVESTIGATOR IDENTITY
+                    </span>
+
+                    <h2>
+                        Choose your
+                        <span>investigator.</span>
+                    </h2>
+
+                    <p>
+                        This is how the other players will see you.
+                    </p>
+
+                </div>
+
+
+                <!-- Character grid -->
+                <div id="character-grid" class="character-grid">
+
+                    <!-- Characters will be generated here -->
+
+                </div>
+
+
+                <button id="confirm-character-btn"
+                        class="primary-button setup-button">
+
+                    <span>CONFIRM INVESTIGATOR</span>
+
+                    <span class="button-arrow">→</span>
+
+                </button>
+
+            </div>
+
+        </section>
+
+
+        <!-- ================================================
+             GAME SCREEN
+        ================================================= -->
+
+        <section id="game-screen" class="screen">
+
+            <header class="game-header">
+
+                <div class="brand">
+                    <span class="brand-mark">◆</span>
+                    THE HEIST
+                </div>
+
+                <div class="game-phase">
+                    INVESTIGATION
+                </div>
+
+                <div class="game-player">
+                    <span id="current-player-avatar">●</span>
+                    <span id="current-player-name">PLAYER</span>
+                </div>
+
+            </header>
+
+
+            <div id="game-content" class="game-content">
+
+                <!-- Game phases will appear here -->
+
+            </div>
+
+        </section>
+
+        <!-- ================================================
+     ROLE REVEAL SCREEN
+================================================= -->
+
+    <section id="role-screen" class="screen">
+
+    <div class="role-background"></div>
+
+    <div class="role-container">
+
+        <div class="classified-label">
+
+            <span>◆</span>
+
+            CONFIDENTIAL
+
+            <span>◆</span>
+
+        </div>
+
+
+        <div class="role-player">
+
+            <div
+                id="role-player-avatar"
+                class="role-avatar">
+            </div>
+
+            <div
+                id="role-player-name"
+                class="role-player-name">
+                PLAYER
+            </div>
+
+        </div>
+
+
+        <div class="role-divider"></div>
+
+
+        <div class="role-label">
+            YOUR SECRET ROLE
+        </div>
+
+
+        <h1
+            id="role-title"
+            class="role-title">
+            UNKNOWN
+        </h1>
+
+
+        <p
+            id="role-description"
+            class="role-description">
+        </p>
+
+
+        <div
+            id="role-secret"
+            class="role-secret">
+
+            <div class="secret-header">
+                🔒 CLASSIFIED INFORMATION
+            </div>
+
+            <div
+                id="role-secret-text"
+                class="secret-text">
+            </div>
+
+        </div>
+
+
+        <button
+            id="role-continue-btn"
+            class="primary-button">
+
+            <span>I UNDERSTAND</span>
+
+            <span class="button-arrow">
+                →
+            </span>
+
+        </button>
+
+    </div>
+
+    </section>
+    </main>
+
+
+    <!-- Main game script -->
+    <script src="js/players.js"></script>
+    <script src="js/cases.js"></script>
+    <script src="js/game.js"></script>
+</body>
+</html>
