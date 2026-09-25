@@ -759,38 +759,26 @@ function showTestimonyPrompt() {
 
 }
 function showPublicTestimonyScreen() {
-
     const player = getCurrentPlayer();
 
-    const gameContent =
-        document.getElementById("game-content");
+    const gameContent = document.getElementById("game-content");
 
     gameContent.innerHTML = `
-
         <section class="testimony-section">
 
-            <div class="case-kicker">
-                PUBLIC TESTIMONY
-            </div>
+            <div class="case-kicker">PUBLIC TESTIMONY</div>
 
-            <h1>
-                ${player.name.toUpperCase()}
-                IS SPEAKING
-            </h1>
+            <h1>${player.name.toUpperCase()} IS SPEAKING</h1>
 
             <p class="phase-instruction">
-                Everyone may listen now.
+                Everyone may listen now. Give your account of what happened.
             </p>
 
             <div class="speak-card">
 
-                <div class="speak-icon">
-                    🎙
-                </div>
+                <div class="speak-icon">🎙</div>
 
-                <h2>
-                    Tell the group your story.
-                </h2>
+                <h2>Tell the group your story.</h2>
 
                 <p>
                     Explain where you were, what you saw,
@@ -798,79 +786,224 @@ function showPublicTestimonyScreen() {
                     should know.
                 </p>
 
+                <textarea
+                    id="testimony-input"
+                    class="testimony-input"
+                    maxlength="500"
+                    placeholder="Type your testimony here..."
+                ></textarea>
+
+                <div class="testimony-character-count">
+                    <span id="testimony-count">0</span>/500
+                </div>
+
             </div>
 
-            <button
-                id="testimony-finished-btn"
-                class="primary-button"
-            >
-                TESTIMONY COMPLETE
+            <button id="testimony-finished-btn" class="primary-button">
+                SUBMIT TESTIMONY
             </button>
 
         </section>
-
     `;
+
+    const input = document.getElementById("testimony-input");
+    const count = document.getElementById("testimony-count");
+
+    input.addEventListener("input", () => {
+        count.textContent = input.value.length;
+    });
 
     document
         .getElementById("testimony-finished-btn")
-        .addEventListener(
-            "click",
-            finishTestimony
-        );
-
+        .addEventListener("click", finishTestimony);
 }
+
 function finishTestimony() {
+    const input = document.getElementById("testimony-input");
+    const testimony = input ? input.value.trim() : "";
+
+    if (!testimony) {
+        input.focus();
+        return;
+    }
+
+    const player = getCurrentPlayer();
+
+    player.testimony = testimony;
 
     if (currentPlayerIndex < players.length - 1) {
-
         currentPlayerIndex++;
-
         showTestimonyPrompt();
-
         return;
-
     }
 
     currentPlayerIndex = 0;
-
     showTestimonySummary();
-
 }
-function showTestimonySummary() {
 
-    const gameContent =
-        document.getElementById("game-content");
+function showTestimonySummary() {
+    const gameContent = document.getElementById("game-content");
 
     gameContent.innerHTML = `
-
         <section class="investigation-section">
-
-            <div class="case-kicker">
-                TESTIMONY COMPLETE
-            </div>
-
-            <h1>
-                EVERYONE HAS SPOKEN
-            </h1>
-
+            <div class="case-kicker">TESTIMONY COMPLETE</div>
+            <h1>EVERYONE HAS SPOKEN</h1>
             <p class="phase-instruction">
                 Now compare what everyone said.
                 Look for contradictions, suspicious details,
                 and stories that don't match the evidence.
             </p>
 
-            <button
-                id="continue-investigation-btn"
-                class="primary-button"
-            >
+            <button id="continue-investigation-btn" class="primary-button">
                 REVIEW THE CASE
             </button>
-
         </section>
-
     `;
 
+    document
+        .getElementById("continue-investigation-btn")
+        .addEventListener("click", showInvestigationBoard);
 }
+
+function showInvestigationBoard() {
+    currentPhase = "review";
+
+    const gameContent = document.getElementById("game-content");
+
+    gameContent.innerHTML = `
+        <section class="board-section">
+
+            <div class="board-header">
+                <div>
+                    <div class="case-kicker">CASE REVIEW</div>
+                    <h1>INVESTIGATION BOARD</h1>
+                    <p>
+                        Review the evidence, timeline, and testimony.
+                        Look for details that do not belong together.
+                    </p>
+                </div>
+
+                <div class="board-status">
+                    <span>CASE</span>
+                    <strong>001</strong>
+                </div>
+            </div>
+
+            <div class="board-grid">
+
+                <!-- EVIDENCE -->
+                <div class="board-panel evidence-panel">
+                    <div class="board-panel-header">
+                        <div>
+                            <span class="board-label">01</span>
+                            <h2>EVIDENCE</h2>
+                        </div>
+                        <span class="board-count">
+                            ${currentCase.evidence.length} ITEMS
+                        </span>
+                    </div>
+
+                    <div class="board-evidence-list">
+                        ${currentCase.evidence.map((item, index) => `
+                            <article class="board-evidence-card">
+                                <div class="board-evidence-number">
+                                    0${index + 1}
+                                </div>
+
+                                <div class="board-evidence-content">
+                                    <span>${item.type}</span>
+                                    <h3>${item.title}</h3>
+                                    <p>${item.clue}</p>
+                                </div>
+                            </article>
+                        `).join("")}
+                    </div>
+                </div>
+
+                <!-- TIMELINE -->
+                <div class="board-panel timeline-panel">
+                    <div class="board-panel-header">
+                        <div>
+                            <span class="board-label">02</span>
+                            <h2>TIMELINE</h2>
+                        </div>
+                    </div>
+
+                    <div class="board-timeline">
+                        ${currentCase.timeline.map((event, index) => `
+                            <div class="board-timeline-item">
+                                <div class="timeline-marker">
+                                    ${String(index + 1).padStart(2, "0")}
+                                </div>
+                                <p>${event}</p>
+                            </div>
+                        `).join("")}
+                    </div>
+                </div>
+
+                <!-- TESTIMONY -->
+                <div class="board-panel testimony-panel">
+                    <div class="board-panel-header">
+                        <div>
+                            <span class="board-label">03</span>
+                            <h2>TESTIMONY</h2>
+                        </div>
+                        <span class="board-count">
+                            ${players.length} PLAYERS
+                        </span>
+                    </div>
+
+                    <div class="board-testimony-list">
+                        ${players.map((player, index) => `
+                            <article class="board-testimony-card">
+
+                                <div class="board-player-avatar">
+                                    ${player.character ? player.character.emoji : "?"}
+                                </div>
+
+                                <div class="board-testimony-content">
+                                    <span>PLAYER ${index + 1}</span>
+                                    <h3>${player.name}</h3>
+
+                                    <p>
+                                        ${player.testimony
+                                            ? `"${player.testimony}"`
+                                            : "No recorded testimony yet."
+                                        }
+                                    </p>
+                                </div>
+
+                            </article>
+                        `).join("")}
+                    </div>
+                </div>
+
+            </div>
+
+            <div class="board-action">
+
+                <div class="board-warning">
+                    <span>INVESTIGATOR NOTE</span>
+                    <p>
+                        The truth may be hidden between the evidence
+                        and what people claim happened.
+                    </p>
+                </div>
+
+                <button id="analyze-case-btn" class="primary-button">
+                    ANALYZE CASE
+                </button>
+
+            </div>
+
+        </section>
+    `;
+
+    document
+        .getElementById("analyze-case-btn")
+        .addEventListener("click", analyzeCase);
+}
+
 
 
 /* =========================================================
