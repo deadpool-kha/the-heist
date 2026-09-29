@@ -208,6 +208,7 @@ function assignGameRoles() {
 
             player.role = thiefRole.name;
             player.secret = thiefRole.secret;
+            player.privateClue = thiefRole.clue;
 
         } else {
 
@@ -215,6 +216,7 @@ function assignGameRoles() {
 
             player.role = role.name;
             player.secret = role.secret;
+            player.privateClue = role.clue;
 
         }
 
@@ -1922,7 +1924,10 @@ const roles = [
             "You were watching the museum when the diamond disappeared.",
 
         secret:
-            "You saw someone near the east entrance at exactly 11:42 PM.",
+            "You left your security post for several minutes during the night.",
+
+        clue:
+            "You saw someone enter through the east entrance at exactly 11:42 PM.",
 
         thief: false
 
@@ -1937,7 +1942,10 @@ const roles = [
             "You are responsible for the museum's most valuable collection.",
 
         secret:
-            "Only three people had access to the diamond vault tonight.",
+            "You secretly moved one of the diamond display documents earlier that evening.",
+
+        clue:
+            "Only three people had legitimate access to the diamond's restricted display area.",
 
         thief: false
 
@@ -1952,11 +1960,15 @@ const roles = [
             "You were investigating the museum before the theft occurred.",
 
         secret:
+            "You entered a restricted area without permission while investigating the museum.",
+
+        clue:
             "You heard glass breaking shortly before the alarm sounded.",
 
         thief: false
 
     },
+
     {
         id: "photographer",
 
@@ -1966,9 +1978,13 @@ const roles = [
             "You were documenting the museum's private exhibition tonight.",
 
         secret:
-            "You captured a blurry photograph showing someone near the east entrance.",
+            "You deleted one photograph because it revealed something you were not supposed to photograph.",
+
+        clue:
+            "One of your photographs captured a blurry figure near the east entrance at 11:42 PM.",
 
         thief: false
+
     },
 
     {
@@ -1980,9 +1996,13 @@ const roles = [
             "You maintain the museum's alarms and security systems.",
 
         secret:
-            "The alarm was manually interrupted rather than triggered by a system failure.",
+            "You accessed the security system earlier that night without recording the maintenance session.",
+
+        clue:
+            "The alarm was manually interrupted. It could not have stopped that way because of an ordinary system failure.",
 
         thief: false
+
     },
 
     {
@@ -1994,10 +2014,15 @@ const roles = [
             "You were researching the history of the museum's diamond collection.",
 
         secret:
-            "You discovered that the diamond's display mechanism has a hidden release switch.",
+            "You entered the restricted exhibition area earlier that night while researching the collection.",
+
+        clue:
+            "You discovered that the display mechanism contains a hidden release switch that can open the case without breaking it.",
 
         thief: false
+
     },
+
     {
         id: "thief",
 
@@ -2007,14 +2032,16 @@ const roles = [
             "You stole the diamond. Nobody can know it was you.",
 
         secret:
-            "Convince the investigators that another player is responsible. Keep your story consistent.",
+            "You stole the diamond. Your goal is to make another player look responsible.",
+
+        clue:
+            "You know exactly how the diamond was removed, but revealing too much could expose you.",
 
         thief: true
 
     }
 
 ];
-
 /* ---------------------------------------------------------
    ASSIGN ROLES
 --------------------------------------------------------- */
@@ -2068,11 +2095,7 @@ function assignRoles() {
 
 function loadRoleReveal() {
 
-    assignRoles();
-
-
     currentPlayerIndex = 0;
-
 
     showRoleForCurrentPlayer();
 
@@ -2117,6 +2140,12 @@ function showRoleForCurrentPlayer() {
         );
 
 
+    const privateClue =
+        document.getElementById(
+            "role-private-clue"
+        );
+
+
     avatar.textContent =
         player.character.emoji;
 
@@ -2131,6 +2160,10 @@ function showRoleForCurrentPlayer() {
 
     secret.textContent =
         player.secret;
+
+
+    privateClue.textContent =
+        player.privateClue;
 
 
     const roleData =
@@ -2157,50 +2190,39 @@ function showRoleForCurrentPlayer() {
     showScreen("role");
 
 }
+
 const roleContinueButton =
-    document.getElementById(
-        "role-continue-btn"
-    );
+    document.getElementById("role-continue-btn");
 
+if (roleContinueButton) {
 
-roleContinueButton.addEventListener(
-    "click",
-    () => {
+    roleContinueButton.addEventListener("click", () => {
 
-        if (
-            currentPlayerIndex <
-            players.length - 1
-        ) {
+        console.log("I UNDERSTAND clicked");
+
+        if (currentPlayerIndex < players.length - 1) {
 
             currentPlayerIndex++;
 
-
             showRoleForCurrentPlayer();
 
-
             return;
-
         }
 
-
-        /*
-         * Everyone has seen their role.
-         * Start the actual investigation.
-         */
-
+        // Everyone has seen their role
         resetCurrentPlayer();
-
 
         showScreen("game");
 
-
         updatePlayerHeader();
 
-
         loadOpeningScene();
+    });
 
-    }
-);
+} else {
+
+    console.error("role-continue-btn was not found.");
+}
 
 function getCurrentRoundData() {
 
