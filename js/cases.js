@@ -108,6 +108,89 @@ const cases = [
     }
 ];
 
+rounds: [
+    {
+        round: 1,
+        title: "THE INCIDENT",
+        testimonyPrompt: "Describe where you were when the diamond disappeared and what you noticed before the alarm.",
+
+        evidence: [
+            {
+                id: "broken-glass",
+                title: "BROKEN DISPLAY GLASS",
+                type: "PHYSICAL",
+                clue: "The damage appears to have been caused from inside the case."
+            },
+            {
+                id: "security-log",
+                title: "SECURITY LOG",
+                type: "DIGITAL",
+                clue: "An access event was recorded at the east entrance at 11:42 PM."
+            },
+            {
+                id: "alarm-recording",
+                title: "ALARM RECORDING",
+                type: "AUDIO",
+                clue: "The alarm was manually interrupted 13 seconds after activation."
+            }
+        ]
+    },
+
+    {
+        round: 2,
+        title: "THE ACCESS",
+        testimonyPrompt:
+            "The investigation has uncovered new access records. Explain where you were when the east entrance was accessed and whether you had access to the security system.",
+        evidence: [
+            {
+                id: "access-credential",
+                title: "ACCESS CREDENTIAL",
+                type: "DIGITAL",
+                clue: "The 11:42 PM east entrance access was made using a credential assigned to someone inside the museum."
+            },
+            {
+                id: "wet-footprints",
+                title: "WET FOOTPRINTS",
+                type: "PHYSICAL",
+                clue: "Fresh footprints lead from the east entrance toward the restricted exhibition hall."
+            },
+            {
+                id: "security-gap",
+                title: "SECURITY GAP",
+                type: "DIGITAL",
+                clue: "The east entrance camera stopped recording for 47 seconds shortly after the access event."
+            }
+        ]
+    },
+
+    {
+        round: 3,
+        title: "THE CONTRADICTION",
+        testimonyPrompt:
+            "The final evidence has revealed serious contradictions. Give your final account of what happened and explain anything that investigators may have misunderstood.",
+        evidence: [
+            {
+                id: "hidden-switch",
+                title: "HIDDEN RELEASE",
+                type: "PHYSICAL",
+                clue: "The display mechanism contains a concealed release switch that can open the case without breaking the front glass."
+            },
+            {
+                id: "alarm-control",
+                title: "ALARM CONTROL",
+                type: "DIGITAL",
+                clue: "The alarm interruption required access to the museum's internal control panel."
+            },
+            {
+                id: "final-recording",
+                title: "FINAL RECORDING",
+                type: "AUDIO",
+                clue: "A recovered audio fragment places someone inside the restricted hall immediately before the alarm."
+            }
+        ]
+    }
+]
+
 function getRandomCase() {
     return cases[Math.floor(Math.random() * cases.length)];
 }

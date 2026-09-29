@@ -1,5 +1,6 @@
 let currentCase = null;
 let currentPhase = "setup";
+let currentRound = 1;
 let accusationVotes = [];
 
 /* =========================================================
@@ -178,7 +179,49 @@ continueSetupButton.addEventListener("click", () => {
 
 });
 
+function assignGameRoles() {
 
+    if (players.length === 0) {
+        console.error("No players available.");
+        return;
+    }
+
+    const shuffledPlayers = [...players]
+        .sort(() => Math.random() - 0.5);
+
+    const thiefPlayer = shuffledPlayers[0];
+
+    const innocentRoles = roles.filter(role => !role.thief);
+
+    const shuffledRoles = [...innocentRoles]
+        .sort(() => Math.random() - 0.5);
+
+    players.forEach((player, index) => {
+
+        player.isThief = player.id === thiefPlayer.id;
+
+        if (player.isThief) {
+
+            const thiefRole = roles.find(
+                role => role.id === "thief"
+            );
+
+            player.role = thiefRole.name;
+            player.secret = thiefRole.secret;
+
+        } else {
+
+            const role = shuffledRoles[index % shuffledRoles.length];
+
+            player.role = role.name;
+            player.secret = role.secret;
+
+        }
+
+    });
+
+    console.log("Roles assigned.");
+}
 /* ---------------------------------------------------------
    CHARACTER DATA
 --------------------------------------------------------- */
@@ -332,28 +375,28 @@ function createCharacters() {
         `;
 
 
-    card.addEventListener("click", () => {
+        card.addEventListener("click", () => {
 
-    document
-        .querySelectorAll(".character-card")
-        .forEach(card => {
+            document
+                .querySelectorAll(".character-card")
+                .forEach(card => {
 
-            card.classList.remove("selected");
+                    card.classList.remove("selected");
+
+                });
+
+
+            card.classList.add("selected");
+
+
+            selectedCharacter = character;
+
+
+            setPlayerCharacter(character);
 
         });
 
-
-    card.classList.add("selected");
-
-
-    selectedCharacter = character;
-
-
-    setPlayerCharacter(character);
-
-});
-
-    grid.appendChild(card);
+        grid.appendChild(card);
 
     });
 
@@ -449,6 +492,8 @@ confirmCharacterButton.addEventListener("click", () => {
 
     /* Everyone has chosen */
 
+    assignGameRoles();
+
     resetCurrentPlayer();
 
 
@@ -469,6 +514,7 @@ confirmCharacterButton.addEventListener("click", () => {
 
 function loadOpeningScene() {
     currentCase = getRandomCase();
+    currentRound = 1;
     currentPhase = "briefing";
 
     const gameContent = document.getElementById("game-content");
@@ -573,7 +619,7 @@ function renderEvidencePhase() {
         .getElementById("continue-evidence-btn")
         .addEventListener("click", loadTestimonyPhase);
 }
-    
+
 function loadTestimonyPhase() {
     currentPhase = "testimony";
 
@@ -613,11 +659,32 @@ function loadTestimonyPhase() {
         .getElementById("start-testimony-btn")
         .addEventListener("click", startTestimony);
 }
+
+function findNextActivePlayer(startIndex = 0) {
+
+    for (let i = startIndex; i < players.length; i++) {
+
+        if (!players[i].isEliminated) {
+            return i;
+        }
+
+    }
+
+    return -1;
+}
+
 function startTestimony() {
 
     currentPhase = "testimony";
 
-    currentPlayerIndex = 0;
+    currentPlayerIndex = findNextActivePlayer(0);
+
+    if (currentPlayerIndex === -1) {
+
+        console.error("No active players available.");
+        return;
+
+    }
 
     showTestimonyPrompt();
 
@@ -626,40 +693,113 @@ function getTestimonyPrompt(player) {
 
     if (player.isThief) {
 
+        const thiefPrompts = {
+
+            1:
+                "Explain where you were when the diamond disappeared. Keep your story believable and avoid drawing attention to yourself.",
+
+            2:
+                "New access records have appeared. Explain your movements around the east entrance and why your story still makes sense.",
+
+            3:
+                "The investigators have uncovered serious contradictions. Give your final account and explain anything that could make you look suspicious."
+        };
+
         return {
             title: "PROTECT YOUR STORY",
             instruction:
-                "Explain where you were when the diamond disappeared. Keep your story believable and avoid drawing attention to yourself."
+                thiefPrompts[currentRound] ||
+                thiefPrompts[1]
         };
 
     }
 
     const prompts = {
 
-        "SECURITY GUARD":
-            "Describe what you were doing around 11:42 PM and anything unusual you noticed near the entrances.",
+        "SECURITY GUARD": {
 
-        "CURATOR":
-            "Explain your connection to the diamond and who you believe could have accessed the vault.",
+            1:
+                "Describe what you were doing around 11:42 PM and anything unusual you noticed near the entrances.",
 
-        "JOURNALIST":
-            "Describe what you were investigating and anything you heard before the alarm sounded.",
+            2:
+                "The investigation found an access event at the east entrance. Explain what you saw there and who could have entered.",
 
-        "PHOTOGRAPHER":
-            "Describe what you were photographing and anything unusual that appeared in your photos.",
+            3:
+                "The final evidence suggests someone manipulated the security system. Explain what you now believe happened."
+        },
 
-        "TECHNICIAN":
-            "Explain what you know about the alarm system and whether the alarm behavior looked normal.",
+        "CURATOR": {
 
-        "HISTORIAN":
-            "Explain what you know about the diamond display and anything unusual about the museum tonight."
+            1:
+                "Explain your connection to the diamond and who you believe could have accessed the vault.",
+
+            2:
+                "New access records have surfaced. Explain who had legitimate access to the restricted areas and whether anything seems unusual.",
+
+            3:
+                "The display mechanism may have been opened without breaking the case. Explain who would have known about this."
+        },
+
+        "JOURNALIST": {
+
+            1:
+                "Describe what you were investigating and anything you heard before the alarm sounded.",
+
+            2:
+                "The investigation has uncovered new information about the east entrance. Explain anything you noticed that could help identify the person responsible.",
+
+            3:
+                "Several accounts now contradict each other. Explain which story you believe is false and why."
+        },
+
+        "PHOTOGRAPHER": {
+
+            1:
+                "Describe what you were photographing and anything unusual that appeared in your photos.",
+
+            2:
+                "Investigators believe your photographs may contain evidence about the east entrance. Explain what you remember seeing.",
+
+            3:
+                "The final evidence suggests someone was inside the restricted hall. Explain anything your photographs can tell us."
+        },
+
+        "TECHNICIAN": {
+
+            1:
+                "Explain what you know about the alarm system and whether the alarm behavior looked normal.",
+
+            2:
+                "The investigation found a gap in the east entrance camera recording. Explain how that could have happened and who could have caused it.",
+
+            3:
+                "The alarm was manually interrupted. Explain what access would have been required and who could have performed it."
+        },
+
+        "HISTORIAN": {
+
+            1:
+                "Explain what you know about the diamond display and anything unusual about the museum tonight.",
+
+            2:
+                "Investigators discovered new information about the restricted exhibition area. Explain who might have known how to reach it.",
+
+            3:
+                "The display contains a hidden release mechanism. Explain who would have known about it and how it could have been used."
+        }
     };
 
+    const rolePrompts = prompts[player.role];
+
     return {
+
         title: "GIVE YOUR TESTIMONY",
+
         instruction:
-            prompts[player.role] ||
+            rolePrompts?.[currentRound] ||
+            rolePrompts?.[1] ||
             "Explain what you saw, heard, or remember from tonight."
+
     };
 
 }
@@ -820,26 +960,40 @@ function showPublicTestimonyScreen() {
 }
 
 function finishTestimony() {
-    const input = document.getElementById("testimony-input");
-    const testimony = input ? input.value.trim() : "";
+
+    const input =
+        document.getElementById("testimony-input");
+
+    const testimony =
+        input ? input.value.trim() : "";
 
     if (!testimony) {
+
         input.focus();
         return;
+
     }
 
     const player = getCurrentPlayer();
 
     player.testimony = testimony;
 
-    if (currentPlayerIndex < players.length - 1) {
-        currentPlayerIndex++;
+    const nextIndex =
+        findNextActivePlayer(currentPlayerIndex + 1);
+
+    if (nextIndex !== -1) {
+
+        currentPlayerIndex = nextIndex;
+
         showTestimonyPrompt();
+
         return;
     }
 
-    currentPlayerIndex = 0;
+    currentPlayerIndex = findNextActivePlayer(0);
+
     showTestimonySummary();
+
 }
 
 function showTestimonySummary() {
@@ -980,6 +1134,18 @@ function analyzeAllTestimonies() {
     return findings;
 }
 
+function resetRoundTestimonies() {
+
+    players.forEach(player => {
+
+        if (!player.isEliminated) {
+            player.testimony = null;
+        }
+
+    });
+
+}
+
 
 function analyzeCase() {
     const findings = analyzeAllTestimonies();
@@ -999,9 +1165,8 @@ function analyzeCase() {
                 before making an accusation.
             </p>
 
-            ${
-                findings.length === 0
-                    ? `
+            ${findings.length === 0
+            ? `
                         <div class="analysis-empty">
                             <div class="analysis-icon">✓</div>
                             <h2>NO DIRECT CONTRADICTIONS</h2>
@@ -1011,7 +1176,7 @@ function analyzeCase() {
                             </p>
                         </div>
                     `
-                    : `
+            : `
                         <div class="analysis-summary">
                             <span>ITEMS REQUIRING ATTENTION</span>
                             <strong>${findings.length}</strong>
@@ -1021,11 +1186,11 @@ function analyzeCase() {
 
                           ${findings.map((finding, index) => {
 
-                        const player = players.find(
-                            player => player.name === finding.player
-                        );
+                const player = players.find(
+                    player => player.name === finding.player
+                );
 
-                        return `
+                return `
                             <article class="analysis-card">
 
                                 <div class="analysis-number">
@@ -1035,11 +1200,10 @@ function analyzeCase() {
                                 <div class="analysis-content">
 
                                     <div class="analysis-player-label">
-                                        PLAYER ${
-                                            player
-                                                ? String(player.id).padStart(2, "0")
-                                                : "?"
-                                        }
+                                        PLAYER ${player
+                        ? String(player.id).padStart(2, "0")
+                        : "?"
+                    }
                                     </div>
 
                                     <div class="analysis-player-name">
@@ -1078,11 +1242,11 @@ function analyzeCase() {
 
                             </article>
                         `;
-                    }).join("")}
+            }).join("")}
 
                         </div>
                     `
-            }
+        }
 
             <div class="analysis-footer">
 
@@ -1107,7 +1271,20 @@ function analyzeCase() {
 
     document
         .getElementById("continue-analysis-btn")
-        .addEventListener("click", showAccusationPhase);
+        .addEventListener("click", () => {
+
+            if (currentRound > 1) {
+
+                resetRoundTestimonies();
+
+                startTestimony();
+
+                return;
+            }
+
+            showAccusationPhase();
+
+        });
 }
 function showAccusationPhase() {
     currentPhase = "accusation";
@@ -1121,9 +1298,9 @@ function showPrivateAccusation() {
     const player = getCurrentPlayer();
 
     const suspects = players.filter(
-    suspect =>
-        suspect.id !== player.id &&
-        !suspect.isEliminated
+        suspect =>
+            suspect.id !== player.id &&
+            !suspect.isEliminated
     );
 
     const gameContent = document.getElementById("game-content");
@@ -1176,11 +1353,10 @@ function showPrivateAccusation() {
                     >
 
                         <div class="suspect-avatar">
-                            ${
-                                suspect.character
-                                    ? suspect.character.emoji
-                                    : "?"
-                            }
+                            ${suspect.character
+            ? suspect.character.emoji
+            : "?"
+        }
                         </div>
 
                         <div class="suspect-info">
@@ -1374,7 +1550,7 @@ function calculateVoteResult(voteCounts) {
     const skipVotes = voteCounts.skip;
 
     const allVoteCounts = [
-    ...playerVoteCounts.map(item => item.votes),skipVotes  ];
+        ...playerVoteCounts.map(item => item.votes), skipVotes];
 
     const highestVotes =
         Math.max(...allVoteCounts);
@@ -1505,14 +1681,62 @@ function showVoteOutcome(title, message, submessage) {
     `;
 
     document
-    .getElementById("vote-outcome-continue")
-    .addEventListener("click", () => {
+        .getElementById("vote-outcome-continue")
+        .addEventListener("click", () => {
+            if (currentRound < 3) {
 
-        showInvestigationBoard();
+                currentRound++;
+                showInvestigationBoard();
 
-    });
+            } else {
+
+                showFinalInvestigation();
+
+            }
+
+        });
 }
 
+function showFinalInvestigation() {
+
+    currentPhase = "final";
+
+    const gameContent =
+        document.getElementById("game-content");
+
+    gameContent.innerHTML = `
+        <section class="vote-outcome">
+
+            <div class="case-kicker">
+                FINAL INVESTIGATION
+            </div>
+
+            <h1>
+                FINAL ACCUSATION
+            </h1>
+
+            <p class="vote-outcome-message">
+                The investigation has reached its final stage.
+            </p>
+
+            <p class="vote-outcome-submessage">
+                Review everything you discovered and make your final decision.
+            </p>
+
+            <button
+                id="final-accusation-btn"
+                class="primary-button"
+            >
+                MAKE FINAL ACCUSATION
+            </button>
+
+        </section>
+    `;
+
+    document
+        .getElementById("final-accusation-btn")
+        .addEventListener("click", showPrivateAccusation);
+}
 
 function showVoteReveal() {
 
@@ -1529,9 +1753,16 @@ function showVoteReveal() {
 }
 
 function showInvestigationBoard() {
+
     currentPhase = "review";
 
-    const gameContent = document.getElementById("game-content");
+    const roundData = getCurrentRoundData();
+
+    console.log("Current round:", currentRound);
+    console.log("Round data:", roundData);
+
+    const gameContent =
+        document.getElementById("game-content");
 
     gameContent.innerHTML = `
         <section class="board-section">
@@ -1539,10 +1770,12 @@ function showInvestigationBoard() {
             <div class="board-header">
                 <div>
                     <div class="case-kicker">CASE REVIEW</div>
-                    <h1>INVESTIGATION BOARD</h1>
+                    <h1>
+                        ${roundData ? roundData.title : "INVESTIGATION BOARD"}
+                    </h1>
                     <p>
-                        Review the evidence, timeline, and testimony.
-                        Look for details that do not belong together.
+                    Round ${currentRound} of the investigation.
+                    Review the new evidence and determine what changed.
                     </p>
                 </div>
 
@@ -1562,12 +1795,12 @@ function showInvestigationBoard() {
                             <h2>EVIDENCE</h2>
                         </div>
                         <span class="board-count">
-                            ${currentCase.evidence.length} ITEMS
+                            ${roundData ? roundData.evidence.length : currentCase.evidence.length} ITEMS
                         </span>
                     </div>
 
                     <div class="board-evidence-list">
-                        ${currentCase.evidence.map((item, index) => `
+                        ${(roundData ? roundData.evidence : currentCase.evidence).map((item, index) => `
                             <article class="board-evidence-card">
                                 <div class="board-evidence-number">
                                     0${index + 1}
@@ -1630,9 +1863,9 @@ function showInvestigationBoard() {
 
                                     <p>
                                         ${player.testimony
-                                            ? `"${player.testimony}"`
-                                            : "No recorded testimony yet."
-                                        }
+            ? `"${player.testimony}"`
+            : "No recorded testimony yet."
+        }
                                     </p>
                                 </div>
 
@@ -1969,6 +2202,27 @@ roleContinueButton.addEventListener(
     }
 );
 
+function getCurrentRoundData() {
+
+    if (!currentCase.rounds) {
+        return null;
+    }
+
+    return currentCase.rounds.find(
+        round => round.round === currentRound
+    );
+}
+
+function getCurrentTestimonyPrompt() {
+
+    const roundData = getCurrentRoundData();
+
+    if (roundData && roundData.testimonyPrompt) {
+        return roundData.testimonyPrompt;
+    }
+
+    return "Describe what you saw and where you were during the incident.";
+}
 
 // ================================
 // DEV TEST MODE
