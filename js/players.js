@@ -55,7 +55,10 @@ function createPlayersFromSetup() {
 
             score: 0,
 
-            isThief: false
+            isThief: false,
+
+            isEliminated: false
+
 
         });
 

@@ -1121,7 +1121,9 @@ function showPrivateAccusation() {
     const player = getCurrentPlayer();
 
     const suspects = players.filter(
-        suspect => suspect.id !== player.id
+    suspect =>
+        suspect.id !== player.id &&
+        !suspect.isEliminated
     );
 
     const gameContent = document.getElementById("game-content");
@@ -1259,17 +1261,23 @@ function showPrivateAccusation() {
 
 function finishPrivateAccusation() {
 
-    if (currentPlayerIndex < players.length - 1) {
+    let nextIndex = currentPlayerIndex + 1;
 
-        currentPlayerIndex++;
+    while (
+        nextIndex < players.length &&
+        players[nextIndex].isEliminated
+    ) {
+        nextIndex++;
+    }
 
+    if (nextIndex < players.length) {
+
+        currentPlayerIndex = nextIndex;
         showAccusationPassScreen();
-
         return;
     }
 
     currentPlayerIndex = 0;
-
     showVoteReveal();
 }
 
@@ -1327,187 +1335,197 @@ function showAccusationPassScreen() {
         .addEventListener("click", showPrivateAccusation);
 }
 
-function showVoteReveal() {
-
-    currentPhase = "vote-reveal";
+function countVotes(votes) {
 
     const voteCounts = {};
 
-    players.forEach(player => {
+    for (const player of players) {
         voteCounts[player.id] = 0;
-    });
+    }
 
-    accusationVotes.forEach(vote => {
-        voteCounts[vote.suspectId]++;
-    });
+    let skipVotes = 0;
 
-    const highestVotes = Math.max(...Object.values(voteCounts));
+    for (const vote of votes) {
 
-    const leaders = players.filter(
-        player => voteCounts[player.id] === highestVotes
-    );
+        if (vote.voteType === "skip") {
+            skipVotes++;
+        } else {
+            voteCounts[vote.suspectId]++;
+        }
+    }
 
-    const hasTie = leaders.length > 1;
+    voteCounts.skip = skipVotes;
+
+    return voteCounts;
+}
+
+function calculateVoteResult(voteCounts) {
+
+    const playerVoteCounts = [];
+
+    for (const player of players) {
+
+        playerVoteCounts.push({
+            playerId: player.id,
+            votes: voteCounts[player.id]
+        });
+
+    }
+    const skipVotes = voteCounts.skip;
+
+    const allVoteCounts = [
+    ...playerVoteCounts.map(item => item.votes),skipVotes  ];
+
+    const highestVotes =
+        Math.max(...allVoteCounts);
+
+    const leaders =
+        playerVoteCounts.filter(
+            item => item.votes === highestVotes
+        );
+
+
+    if (skipVotes === highestVotes && leaders.length === 0) {
+
+        return {
+            type: "skip"
+        };
+
+    }
+
+    if (leaders.length === 1) {
+
+        return {
+            type: "eliminate",
+            playerId: leaders[0].playerId
+        };
+
+    }
+
+    if (leaders.length > 1) {
+
+        return {
+            type: "draw"
+        };
+
+    }
+
+}
+
+function handleVoteResult(result) {
+
+    if (result.type === "skip") {
+
+        showVoteOutcome(
+            "NO ACCUSATION",
+            "The players chose not to eliminate anyone.",
+            "The investigation continues."
+        );
+
+        return;
+    }
+
+    if (result.type === "draw") {
+
+        showVoteOutcome(
+            "VOTE DRAW",
+            "The players could not reach a decision.",
+            "No one is eliminated. The investigation continues."
+        );
+
+        return;
+    }
+
+    if (result.type === "eliminate") {
+
+        const selectedPlayer = players.find(
+            player => player.id === result.playerId
+        );
+
+        if (!selectedPlayer) {
+            console.error("Selected player not found.");
+            return;
+        }
+
+        if (selectedPlayer.isThief) {
+
+            showVoteOutcome(
+                "THE THIEF WAS CAUGHT",
+                `${selectedPlayer.name} was the thief.`,
+                "The investigation is complete."
+            );
+
+            return;
+        }
+
+        selectedPlayer.isEliminated = true;
+
+        showVoteOutcome(
+            "WRONG ACCUSATION",
+            `${selectedPlayer.name} was innocent.`,
+            "They have been eliminated. The investigation continues."
+        );
+
+        return;
+    }
+}
+
+function showVoteOutcome(title, message, submessage) {
 
     const gameContent =
         document.getElementById("game-content");
 
     gameContent.innerHTML = `
-        <section class="vote-reveal-section">
+        <section class="vote-outcome">
 
             <div class="case-kicker">
-                ACCUSATIONS REVEALED
+                VOTE RESULT
             </div>
 
             <h1>
-                THE ROOM HAS VOTED
+                ${title}
             </h1>
 
-            <p class="phase-instruction">
-                Every investigator has made their accusation.
-                The votes are now public.
+            <p class="vote-outcome-message">
+                ${message}
             </p>
 
-            ${
-                hasTie
-                    ? `
-                        <div class="vote-result tie">
-
-                            <div class="vote-result-icon">
-                                ⚠
-                            </div>
-
-                            <div>
-                                <span>
-                                    NO CONSENSUS
-                                </span>
-
-                                <h2>
-                                    THE VOTE IS TIED
-                                </h2>
-
-                                <p>
-                                    The investigators could not agree
-                                    on a single suspect.
-                                </p>
-                            </div>
-
-                        </div>
-                    `
-                    : `
-                        <div class="vote-result">
-
-                            <div class="vote-result-icon">
-                                🎯
-                            </div>
-
-                            <div>
-                                <span>
-                                    GROUP SUSPECT
-                                </span>
-
-                                <h2>
-                                    ${leaders[0].name.toUpperCase()}
-                                </h2>
-
-                                <p>
-                                    Received ${highestVotes}
-                                    ${highestVotes === 1 ? "vote" : "votes"}.
-                                </p>
-                            </div>
-
-                        </div>
-                    `
-            }
-
-            <div class="vote-list">
-
-                ${players.map(player => {
-
-                    const votes =
-                        voteCounts[player.id] || 0;
-
-                    const isLeader =
-                        voteCounts[player.id] === highestVotes;
-
-                    return `
-                        <article class="
-                            vote-card
-                            ${isLeader ? "vote-leader" : ""}
-                        ">
-
-                            <div class="vote-player">
-
-                                <div class="vote-avatar">
-                                    ${
-                                        player.character
-                                            ? player.character.emoji
-                                            : "?"
-                                    }
-                                </div>
-
-                                <div>
-
-                                    <span>
-                                        PLAYER ${String(player.id).padStart(2, "0")}
-                                    </span>
-
-                                    <strong>
-                                        ${player.name}
-                                    </strong>
-
-                                </div>
-
-                            </div>
-
-                            <div class="vote-count">
-
-                                <strong>
-                                    ${votes}
-                                </strong>
-
-                                <span>
-                                    ${votes === 1 ? "VOTE" : "VOTES"}
-                                </span>
-
-                            </div>
-
-                        </article>
-                    `;
-
-                }).join("")}
-
-            </div>
-
-            <div class="vote-warning">
-
-                <span>
-                    IMPORTANT
-                </span>
-
-                <p>
-                    ${
-                        hasTie
-                            ? "The group reached no consensus. The actual thief will now be revealed."
-                            : "The group selected a suspect. Now find out whether they were right."
-                    }
-                </p>
-
-            </div>
+            <p class="vote-outcome-submessage">
+                ${submessage}
+            </p>
 
             <button
-                id="reveal-truth-btn"
+                id="vote-outcome-continue"
                 class="primary-button"
             >
-                REVEAL THE TRUTH
+                CONTINUE
             </button>
 
         </section>
     `;
 
     document
-        .getElementById("reveal-truth-btn")
-        .addEventListener("click", revealTruth);
+    .getElementById("vote-outcome-continue")
+    .addEventListener("click", () => {
+
+        showInvestigationBoard();
+
+    });
+}
+
+
+function showVoteReveal() {
+
+    currentPhase = "vote-reveal";
+
+    const voteCounts = countVotes(accusationVotes);
+
+    const result = calculateVoteResult(voteCounts);
+
+    console.log("Vote counts:", voteCounts);
+    console.log("Vote result:", result);
+
+    handleVoteResult(result);
 }
 
 function showInvestigationBoard() {
@@ -1950,3 +1968,47 @@ roleContinueButton.addEventListener(
 
     }
 );
+
+
+// ================================
+// DEV TEST MODE
+// ================================
+
+function devTestElimination() {
+
+    players = [
+        {
+            id: 1,
+            name: "Alex",
+            character: { emoji: "🕵️" },
+            isThief: false,
+            isEliminated: false
+        },
+        {
+            id: 2,
+            name: "Sam",
+            character: { emoji: "👤" },
+            isThief: false,
+            isEliminated: true
+        },
+        {
+            id: 3,
+            name: "Jordan",
+            character: { emoji: "🔍" },
+            isThief: true,
+            isEliminated: false
+        },
+        {
+            id: 4,
+            name: "Taylor",
+            character: { emoji: "📸" },
+            isThief: false,
+            isEliminated: false
+        }
+    ];
+
+    currentPlayerIndex = 0;
+
+    showPrivateAccusation();
+
+}
