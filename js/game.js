@@ -2,6 +2,7 @@ let currentCase = null;
 let currentPhase = "setup";
 let currentRound = 1;
 let accusationVotes = [];
+let revealedClues = [];
 
 /* =========================================================
    THE HEIST
@@ -516,8 +517,12 @@ confirmCharacterButton.addEventListener("click", () => {
 
 function loadOpeningScene() {
     currentCase = getRandomCase();
+
     currentRound = 1;
+
     currentPhase = "briefing";
+
+    revealedClues = [];
 
     const gameContent = document.getElementById("game-content");
 
@@ -863,6 +868,16 @@ function showTestimonyPrompt() {
                     ${player.secret}
                 </p>
 
+                <div class="testimony-divider"></div>
+
+                <div class="testimony-label">
+                    YOUR PRIVATE CLUE
+                </div>
+
+                <p class="testimony-secret">
+                    ${player.privateClue}
+                </p>
+
             </div>
 
             <div class="testimony-prompt">
@@ -878,8 +893,8 @@ function showTestimonyPrompt() {
             </div>
 
             <div class="testimony-warning">
-                🔒 Keep this information private.
-                Do not show your role or secret to the other players.
+                🔒 Keep your role, secret, and clue private
+                until you decide what to reveal.
             </div>
 
             <button
@@ -902,16 +917,22 @@ function showTestimonyPrompt() {
 
 }
 function showPublicTestimonyScreen() {
+
     const player = getCurrentPlayer();
 
-    const gameContent = document.getElementById("game-content");
+    const gameContent =
+        document.getElementById("game-content");
 
     gameContent.innerHTML = `
         <section class="testimony-section">
 
-            <div class="case-kicker">PUBLIC TESTIMONY</div>
+            <div class="case-kicker">
+                PUBLIC TESTIMONY
+            </div>
 
-            <h1>${player.name.toUpperCase()} IS SPEAKING</h1>
+            <h1>
+                ${player.name.toUpperCase()} IS SPEAKING
+            </h1>
 
             <p class="phase-instruction">
                 Everyone may listen now. Give your account of what happened.
@@ -919,9 +940,13 @@ function showPublicTestimonyScreen() {
 
             <div class="speak-card">
 
-                <div class="speak-icon">🎙</div>
+                <div class="speak-icon">
+                    🎙
+                </div>
 
-                <h2>Tell the group your story.</h2>
+                <h2>
+                    Tell the group your story.
+                </h2>
 
                 <p>
                     Explain where you were, what you saw,
@@ -942,86 +967,323 @@ function showPublicTestimonyScreen() {
 
             </div>
 
-            <button id="testimony-finished-btn" class="primary-button">
+            <button
+                id="testimony-finished-btn"
+                class="primary-button"
+            >
                 SUBMIT TESTIMONY
             </button>
 
         </section>
     `;
 
-    const input = document.getElementById("testimony-input");
-    const count = document.getElementById("testimony-count");
+    const input =
+        document.getElementById("testimony-input");
+
+    const count =
+        document.getElementById("testimony-count");
 
     input.addEventListener("input", () => {
-        count.textContent = input.value.length;
+
+        count.textContent =
+            input.value.length;
+
     });
 
     document
         .getElementById("testimony-finished-btn")
-        .addEventListener("click", finishTestimony);
+        .addEventListener("click", () => {
+
+            const testimony =
+                input.value.trim();
+
+            if (!testimony) {
+
+                input.focus();
+
+                return;
+            }
+
+            player.testimony =
+                testimony;
+
+            showClueDecision();
+
+        });
+
+}
+
+function showClueDecision() {
+
+    const player =
+        getCurrentPlayer();
+
+    const gameContent =
+        document.getElementById("game-content");
+
+    gameContent.innerHTML = `
+
+        <section class="testimony-section">
+
+            <div class="testimony-classified">
+                PRIVATE DECISION
+            </div>
+
+            <h1>
+                WHAT WILL YOU REVEAL?
+            </h1>
+
+            <p class="phase-instruction">
+                You know something the other players do not.
+                Decide whether your private clue becomes public evidence.
+            </p>
+
+            <div class="testimony-card">
+
+                <div class="testimony-label">
+                    YOUR PRIVATE CLUE
+                </div>
+
+                <p class="testimony-secret">
+                    ${player.privateClue}
+                </p>
+
+            </div>
+
+            <div class="clue-choice-grid">
+
+                <button
+                    id="reveal-clue-btn"
+                    class="clue-choice-button"
+                >
+
+                    <span class="clue-choice-icon">
+                        ◉
+                    </span>
+
+                    <span class="clue-choice-title">
+                        REVEAL CLUE
+                    </span>
+
+                    <span class="clue-choice-description">
+                        Make this information public
+                        for the investigation.
+                    </span>
+
+                </button>
+
+                <button
+                    id="hide-clue-btn"
+                    class="clue-choice-button"
+                >
+
+                    <span class="clue-choice-icon">
+                        ◌
+                    </span>
+
+                    <span class="clue-choice-title">
+                        KEEP SECRET
+                    </span>
+
+                    <span class="clue-choice-description">
+                        Keep this information private
+                        and continue without revealing it.
+                    </span>
+
+                </button>
+
+            </div>
+
+            <div class="testimony-warning">
+                🔒 Your choice cannot be changed later.
+            </div>
+
+        </section>
+
+    `;
+
+    document
+        .getElementById("reveal-clue-btn")
+        .addEventListener(
+            "click",
+            () => {
+
+                player.clueRevealed = true;
+
+                revealedClues.push({
+                    playerId: player.id,
+                    playerName: player.name,
+                    clue: player.privateClue,
+                    round: currentRound
+                });
+
+                finishTestimony();
+
+            }
+        );
+
+    document
+        .getElementById("hide-clue-btn")
+        .addEventListener(
+            "click",
+            () => {
+
+                player.clueRevealed = false;
+
+                finishTestimony();
+
+            }
+        );
+
 }
 
 function finishTestimony() {
 
-    const input =
-        document.getElementById("testimony-input");
+    const player =
+        getCurrentPlayer();
 
-    const testimony =
-        input ? input.value.trim() : "";
+    if (!player.testimony) {
 
-    if (!testimony) {
+        console.error(
+            "No testimony found for current player."
+        );
 
-        input.focus();
         return;
-
     }
 
-    const player = getCurrentPlayer();
-
-    player.testimony = testimony;
-
     const nextIndex =
-        findNextActivePlayer(currentPlayerIndex + 1);
+        findNextActivePlayer(
+            currentPlayerIndex + 1
+        );
 
     if (nextIndex !== -1) {
 
-        currentPlayerIndex = nextIndex;
+        currentPlayerIndex =
+            nextIndex;
 
         showTestimonyPrompt();
 
         return;
     }
 
-    currentPlayerIndex = findNextActivePlayer(0);
+    currentPlayerIndex =
+        findNextActivePlayer(0);
 
     showTestimonySummary();
 
 }
 
 function showTestimonySummary() {
-    const gameContent = document.getElementById("game-content");
+
+    const gameContent =
+        document.getElementById("game-content");
+
+    const publicClues = revealedClues;
+    
 
     gameContent.innerHTML = `
+
         <section class="investigation-section">
-            <div class="case-kicker">TESTIMONY COMPLETE</div>
-            <h1>EVERYONE HAS SPOKEN</h1>
+
+            <div class="case-kicker">
+                TESTIMONY COMPLETE
+            </div>
+
+            <h1>
+                EVERYONE HAS SPOKEN
+            </h1>
+
             <p class="phase-instruction">
                 Now compare what everyone said.
                 Look for contradictions, suspicious details,
                 and stories that don't match the evidence.
             </p>
 
-            <button id="continue-investigation-btn" class="primary-button">
+            <div class="revealed-clues-section">
+
+                <div class="testimony-label">
+                    PLAYER REVELATIONS
+                </div>
+
+                ${publicClues.length === 0
+            ? `
+                        <div class="revealed-clues-empty">
+                            <div class="analysis-icon">
+                                ?
+                            </div>
+
+                            <h2>
+                                NO CLUES REVEALED
+                            </h2>
+
+                            <p>
+                                Everyone chose to keep their
+                                private information secret.
+                            </p>
+                        </div>
+                    `
+            : `
+                        <div class="revealed-clues-list">
+
+                            ${publicClues.map(
+                                (clue, index) => `
+        <article class="revealed-clue-card">
+
+            <div class="revealed-clue-number">
+                ${String(index + 1).padStart(2, "0")}
+            </div>
+
+            <div class="revealed-clue-content">
+
+                <div class="analysis-player-label">
+                    PLAYER REVELATION
+                </div>
+
+                <h2>
+                    ${clue.playerName}
+                </h2>
+
+                <div class="revealed-clue-round">
+                    REVEALED IN ROUND ${clue.round}
+                </div>
+
+                <p>
+                    ${clue.clue}
+                </p>
+
+            </div>
+
+        </article>
+    `
+                            ).join("")}
+
+                        </div>
+                    `
+        }
+
+            </div>
+
+            <button
+                id="continue-investigation-btn"
+                class="primary-button"
+            >
                 REVIEW THE CASE
             </button>
+
         </section>
+
     `;
 
     document
-        .getElementById("continue-investigation-btn")
-        .addEventListener("click", showInvestigationBoard);
-}
+        .getElementById(
+            "continue-investigation-btn"
+        )
+        .addEventListener(
+            "click",
+            showInvestigationBoard
+        );
 
+}
 /* =========================================================
    CONTRADICTION ENGINE
 ========================================================= */

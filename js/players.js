@@ -49,6 +49,10 @@ function createPlayersFromSetup() {
 
             secret: null,
 
+            privateClue: null,
+            
+            clueRevealed: false,
+
             testimony: null,
 
             vote: null,
